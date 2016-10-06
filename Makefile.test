@@ -1,0 +1,45 @@
+# File:   Makefile
+# Author: M. P. Hayes, UCECE
+# Date:   11 Sep 2010
+# Descr:  Makefile for game
+
+CC = gcc
+CFLAGS = -Wall -Wstrict-prototypes -Wextra -g -I. -I../../utils -I../../drivers -I../../drivers/test
+
+DEL = rm
+
+
+# Default target.
+all: game.out
+
+
+# Compile: create object files from C source files.
+game.o: game.c ../../drivers/avr/system.h ../../utils/tinygl.h ../../utils/pacer.h ../../drivers/avr/timer.h ../../drivers/navswitch.h
+	$(CC) -c $(CFLAGS) $< -o $@
+
+system.o: ../../drivers/avr/system.c ../../drivers/avr/avrtest.h ../../drivers/avr/
+	$(CC) -c $(CFLAGS) $< -o $@
+
+pio.o: ../../drivers/avr/pio.c ../../drivers/avr/system.h ../../drivers/avr/pio.h
+	$(CC) -c $(CFLAGS) $< -o $@
+
+tinygl.o: ../../utils/tinygl.c ../../drivers/display.h ../../drivers/avr/system.h ../../utils/font.h ../../utils/tinygl.h
+	$(CC) -c $(CFLAGS) $< -o $@
+
+navswitch.o: ../../drivers/navswitch.c ../../drivers/navswitch.h ../../drivers/avr/avrtest.h ../../drivers/avr/delay.h ../../drivers/avr/pio.h ../../drivers/avr/system.h
+	$(CC) -c $(CFLAGS) $< -o $@
+
+pacer.o: ../../utils/pacer.c ../../drivers/avr/system.h ../../drivers/avr/timer.h ../../utils/pacer.h
+	$(CC) -c $(CFLAGS) $< -o $@
+
+
+
+# Link: create executable file from object files.
+game.out: game.o pio.o system.o tinygl.o pacer.o navswitch.o
+	$(CC) $(CFLAGS) $^ -o $@ -lrt
+
+
+# Clean: delete derived files.
+.PHONY: clean
+clean:
+	-$(DEL) game.out game.o mgetkey-test.o pio.o system.o task.o tinygl.o pacer.o navswitch.o
