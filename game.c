@@ -4,13 +4,17 @@
 #include "tinygl.h"
 #include "../fonts/font3x5_1.h"
 #include "delay.h"
+#include "ir_uart.h"
+
 
 /* Define polling rates in Hz.  */
 #define MOVE_PADDLE_RATE 2
 #define DISPLAY_TASK_RATE 250
 #define MESSAGE_RATE 10
 
-typedef enum {F, B, FL, FR, BL, BR} Dir;
+#define BallPlaced 'P'
+
+typedef enum {F, B, FL, FR, BL, BR, S} Dir;
 
 typedef enum {Left, Right} P_Dir;
 
@@ -75,72 +79,88 @@ void continue_straight(Ball* ball)
 	}
 }
 
-void move_ball(Ball* ball, Paddle paddle) {
-	if (ball->x != 0 && ball->y != 0 && ball->y != 6 && ball->x != 3) {
+char encode_ball_info(Ball* ball)
+{
+	char ch = '0';
+	if (ball->dir == FR) {
+		ch += 17;
+	} else if (ball->dir == FL) {
+		ch += 49;
+	}
+	ch += ball->y;
+	return ch;
+}
+
+void decode_ball_info(char ch, Ball* ball)
+// Decodes character transmitted over IR and updates fields of ball
+// struct accordingly
+{
+	ball->x = 0;
+	if (ch >= '0' && ch <= '6') {
+		ball->dir = B;
+		ch -= 48;
+	} else if (ch >= 'A' && ch <= 'G') {
+		ball->dir = BL;
+		ch -= 65;
+	} else if (ch >= 'a' && ch <= 'g') {
+		ball->dir = BR;
+		ch -= 97;
+	}
+	ball->y = 6 - ch;
+}
+
+void transmit_ball_info(Ball * ball)
+// Sends encoded ball struct over IR and moves the ball off the screen
+{
+    char ch_transmit = encode_ball_info(ball);
+    ir_uart_putc(ch_transmit);
+    ball->x = 10;
+    ball->y = 10;
+    ball->dir = S;
+}
+
+void move_ball(Ball* ball, Paddle paddle)
+{
+	if (ball->dir == S) {
+		// Stationary, don't move
+	} else if (ball->x > 0 && ball->x < 3 && ball->y > 0 && ball->y < 6) {
 		continue_straight(ball);
-	} else if (ball->x == 0){
-		if (ball->dir == F) {
-			ball->x++;
-			ball->dir = B;
-		} else if (ball->dir == FL) {
-			ball->x++;
-			ball->y++;
-			ball->dir = BL;
+	} else if (ball->x == 0) {
+		if (ball->dir == FL) {
+			if (ball->y == 6) {
+				ball->y--;
+				ball->dir = FR;
+			} else {
+				ball->y++;
+			}
+			transmit_ball_info(ball);
 		} else if (ball->dir == FR) {
-			ball->x++;
-			ball->y--;
-			ball->dir = BR;
-		}
-	} else if (ball->x == 3) {
-		if (ball->dir == B) {
-			if (ball->y == paddle.left) {
-				ball->x--;
+			if (ball->y == 0) {
 				ball->y++;
 				ball->dir = FL;
-			} else if (ball->y == paddle.mid) {
-				ball->x--;
-				ball->dir = F;
-			} else if (ball->y == paddle.right) {
-				ball->x--;
-				ball->y--;
-				ball->dir = FR;
 			} else {
-				continue_straight(ball);
-			}
-		} else if (ball->dir == BL) {
-			if (ball->y == paddle.mid) {
-				ball->x--;
-				ball->y++;
-				ball->dir = FL;
-			} else if (ball->y == paddle.right) {
-				ball->x--;
-				ball->dir = F;
-			} else if (ball->y == paddle.right - 1) {
-				ball->x--;
 				ball->y--;
-				ball->dir = FR;
-			} else {
-				continue_straight(ball);
 			}
-		} else if (ball->dir == BR) {
-			if (ball->y == paddle.left + 1) {
-				ball->x--;
-				ball->y++;
-				ball->dir = FL;
-			} else if (ball->y == paddle.left) {
-				ball->x--;
-				ball->dir = F;
-			} else if (ball->y == paddle.mid) {
-				ball->x--;
-				ball->y--;
-				ball->dir = FR;
-			} else {
-				continue_straight(ball);
-			}
-/*
+			transmit_ball_info(ball);
+		} else if (ball->dir == F) {
+			transmit_ball_info(ball);
 		} else {
 			continue_straight(ball);
-*/
+		}
+	} else if (ball->x == 3) {
+		if (ball->y == paddle.left || (ball->y == paddle.right && ball->y == 0)) {
+			ball->x--;
+			ball->y++;
+			ball->dir = FL;
+		} else if (ball->y == paddle.mid) {
+			ball->x--;
+			ball->dir = F;
+		} else if (ball->y == paddle.right || (ball->y == paddle.left && ball->y == 6)) {
+			ball->x--;
+			ball->y--;
+			ball->dir = FR;
+		} else {
+			continue_straight(ball);
 		}
 	} else if (ball->y == 0){
 		if (ball->dir == BR) {
@@ -164,15 +184,19 @@ void move_ball(Ball* ball, Paddle paddle) {
 		}
 	}
 }
+/*
 
-void check_for_loss(Ball ball, bool* game_over)
+void check_for_loss(Ball ball, bool * game_over)
+// increment other player's points instead of setting game_over
+// and then check if points == 3. If so, game_over = true.
 {
-	if (ball.x == 4) {
-		*game_over = true;
-		// increment other player's points
-	}
+    if (ball.x == 4) {
+        game_over = true;
+        ball_placed = false;
+    }
 }
 
+*/
 
 
 void display_task (Paddle paddle, Ball ball)
@@ -195,36 +219,38 @@ void graphics_init(void)
     tinygl_text_dir_set (TINYGL_TEXT_DIR_ROTATE);
 }
 
-void game_init(Ball* ball, Paddle* paddle)
+void ball_init(Ball* ball)
+{
+	ball->x = 3;
+	ball->y = 3;
+	ball->dir = S;
+}
+
+void paddle_init(Paddle* paddle)
 {
 	paddle->left = 4;
 	paddle->mid = 3;
 	paddle->right = 2;
-	ball->x = 0;
-	ball->y = 5;
-	ball->dir = F;
 }
 
-void wait_for_start(void)
+void wait_for_start(bool* ball_placed)
 // Display welcome message and poll pushbutton to see if player is ready
-// to start. Also sends ready character to other player
+// to start. Also poll usart to see if opponent has placed ball
 {
+    tinygl_clear();
     tinygl_text("PONG");
-    // send ready character to other player
+    char ch;
     while (!navswitch_push_event_p(NAVSWITCH_PUSH)) {
         pacer_wait();
         tinygl_update();
         navswitch_update();
+        if (ir_uart_read_ready_p()) {
+            ch = ir_uart_getc();
+            if (ch == BallPlaced) {
+				*ball_placed = true;
+			}
+        }
     }
-}
-
-
-void wait_for_player(void)
-// Display waiting message and poll USART to see if other player has
-// sent ready character
-{
-
-	
 }
 
 
@@ -234,31 +260,64 @@ int main (void)
     navswitch_init();
     pacer_init(300);
     tinygl_init(300);
+    ir_uart_init ();
     graphics_init();
     uint8_t count = 0;
-    Paddle paddle = {4,3,2};
-    Ball ball = {3,5,FR};
+    Paddle paddle;
+    Ball ball;
 	bool game_over = true;
+	bool ball_placed = false;
+	char ch_received;
 
     while (1)
     {
 		pacer_wait ();
 		if (game_over) {
-			tinygl_clear();
-			wait_for_start();
-			wait_for_player();
+			wait_for_start(&ball_placed);
+			if (!ball_placed) {
+				ball_init(&ball);
+				ir_uart_putc (BallPlaced);
+			} else {
+				ball.x = 10;
+				ball.y = 10;
+				ball.dir = S;
+			}
 			game_over = false;
-			game_init(&ball, &paddle);
+			paddle_init(&paddle);
 		} else {
 			tinygl_clear();
 			move_paddle_task (&paddle);
+			if (ball.x == 10 && ball.y == 10 && ir_uart_read_ready_p ()) {
+				ch_received = ir_uart_getc ();
+				decode_ball_info(ch_received, &ball);
+			}
 			display_task(paddle, ball);
-			if (count % 100 == 0 ) {
+			if (ball.dir == S && navswitch_push_event_p(NAVSWITCH_PUSH)) {
+				ball.dir = F;
+			}
+			if (count % 100 == 0) {
 				move_ball(&ball, paddle);
 				count = 0;
 			}
 			count++;
-			check_for_loss(ball, &game_over);
+			//check_for_loss(ball, &game_over);
+			
+			if (ball.x == 4) {
+				game_over = true;
+				ball_placed = false;
+			}
 		}
-    }
+	}
 }
+
+/* Need proper win/lose conditions. At the moment, winner can just keep
+ * moving paddle, but can't receive a new ball or start a new game without
+ * resetting. Loser returns to PONG screen.
+ * 
+ * Also, the ball occassionally doubles up still. Don't have the brainpower
+ * to work out when.
+ * 
+ * But I think the most important thing to do next is to get code commented
+ * and modularised, this is what we will lose marks for atm. We have an
+ * almost perfectly working game!!!
+ */
