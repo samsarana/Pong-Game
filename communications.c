@@ -10,7 +10,7 @@
 #include "ir_uart.h"
 
 
-char encode_ball_info(Ball * ball)
+static char encode_ball_info(Ball * ball)
 // Takes a ball struct and encodes it as an ASCII char to represent
 // y value and direction. The character can be either numeric, lowercase
 // or uppercase, which encodes direction. The ASCII code position within
@@ -32,7 +32,7 @@ char encode_ball_info(Ball * ball)
 }
 
 
-bool decode_info(char ch, Ball * ball)
+static bool decode_info(char ch, Ball * ball)
 // Takes a character received over IR and a pointer to a ball struct.
 // The character is decoded, and if it indicates the the other player
 // has lost, calls the  display_winner function and returns true,

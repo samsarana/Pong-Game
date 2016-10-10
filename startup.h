@@ -20,16 +20,6 @@
 #define BUTTON 0
 
 
-void dim_led(uint16_t speed);
-// If speed is medium, toggles the led on successive iterations through
-// the while loop such that led appears dimmed
-
-
-uint16_t update_speed(uint16_t speed);
-// Takes the current speed selection and toggles it to the next speed
-// selection. Returns the new speed
-
-
 uint16_t wait_for_start(bool * ball_placed, uint16_t speed);
 // Display welcome message and poll pushbutton to see if player is ready
 // to start. Also polls usart to see if opponent has placed ball

@@ -37,6 +37,7 @@
 
 int main(void)
 {
+	// Inititalisations
     system_init();
     navswitch_init();
     led_init();
@@ -46,6 +47,8 @@ int main(void)
     tinygl_init(DISPLAY_TASK_RATE);
     ir_uart_init();
     graphics_init();
+    
+    // Variable declarations
     uint8_t count = 0;
     Paddle paddle;
     Ball ball;
@@ -55,22 +58,27 @@ int main(void)
 
     while (1) {
         pacer_wait();
+        // Display startup screen and wait for game initialisation
         if (game_over) {
             speed = wait_for_start(&ball_placed, speed);
+            // Player who presses first will serve
             if (!ball_placed) {
                 ball_init(&ball);
                 ir_uart_putc(BallPlaced);
             } else {
+				// Other player has started with ball
 				move_ball_off_screen(&ball);
             }
             game_over = false;
             paddle_init(&paddle);
         } else {
+			// Playing game
             tinygl_clear();
             move_paddle_task(&paddle);
             receive_char(&ball, &game_over);
             display_task(paddle, ball);
             serve_ball(&ball);
+            // Move ball at a slower rate than rest of paced loop
             if (count % speed == 0) {
                 move_ball(&ball, paddle);
                 count = 0;

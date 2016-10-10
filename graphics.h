@@ -20,15 +20,6 @@
 #define LED_ON 1
 
 
-void wait(void);
-// Waits for a brief time while win/lose message is displayed
-
-
-void display_char(char ch);
-// Takes a W or L, displays that character on the screen and sends 'L'
-// over IR if player has lost
-
-
 void display_winner(char ch);
 // Displays a W if player has won, or L if player has lost
 

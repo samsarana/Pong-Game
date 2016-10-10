@@ -29,28 +29,6 @@
 #define WIN 'W'
 #define LOSE 'L'
 
-char encode_ball_info(Ball * ball);
-// Takes a ball struct and encodes it as an ASCII char to represent
-// y value and direction. The character can be either numeric, lowercase
-// or uppercase, which encodes direction. The ASCII code position within
-// its 'group' indicates the y value
-// '0' - '6' if travelling forward from one screen to the other
-// 'A' - 'G' if travelling forward right
-// 'a' - 'g' if travelling forward left
-// e.g. 'c' encodes ball->y = 2 and ball->dir = FL
-// Returns the encoded character
-
-
-bool decode_info(char ch, Ball * ball);
-// Takes a character received over IR and a pointer to a ball struct.
-// The character is decoded, and if it indicates the the other player
-// has lost, calls the  display_winner function and returns true,
-// indicating the game is over.
-// Otherwise, the character will be an encoding of a ball struct. This
-// character is decoded (see encode_ball_info for information on the
-// encoding) and the fields of the ball struct are updated accordingly.
-// In this case, it returns false, indicating the game is over.
-
 
 void transmit_ball_info(Ball * ball);
 // Sends encoded ball struct over IR, moves the ball off the screen so

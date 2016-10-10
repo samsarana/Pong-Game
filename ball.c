@@ -21,7 +21,7 @@ void move_ball_off_screen(Ball * ball)
 }
 
 
-void continue_straight(Ball * ball)
+static void continue_straight(Ball * ball)
 // Moves ball to next square according to its current direction
 {
     if (ball->dir == F) {
@@ -44,7 +44,7 @@ void continue_straight(Ball * ball)
 }
 
 
-void bounce_off_wall(Ball * ball)
+static void bounce_off_wall(Ball * ball)
 // Takes a pointer to a ball struct which will represent a ball that is
 // at a wall (i.e. y is 0 or 6) and updates the ball's position and
 // direction according to our logic for wall bouncing
@@ -73,7 +73,7 @@ void bounce_off_wall(Ball * ball)
 }
 
 
-void move_ball_top(Ball * ball)
+static void move_ball_top(Ball * ball)
 // Takes a pointer to a ball struct which represents a ball at the top
 // of the screen. The ball is either sent to the other player's screen
 // if it is travelling forward, or it moves a square back, according to
@@ -105,7 +105,7 @@ void move_ball_top(Ball * ball)
 }
 
 
-void move_ball_bottom(Ball * ball, Paddle paddle)
+static void move_ball_bottom(Ball * ball, Paddle paddle)
 // Takes a pointer to a ball struct which represents a ball at the bottom
 // of the screen, and a paddle. If the ball should bounce off the paddle,
 // its position and direction will be updated accordingly. Otherwise,

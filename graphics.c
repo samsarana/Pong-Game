@@ -13,7 +13,7 @@
 #include "../fonts/font3x5_1.h"
 
 
-void wait(void)
+static void wait(void)
 // Waits for a brief time while win/lose message is displayed
 {
     uint16_t i = 0;
@@ -25,7 +25,7 @@ void wait(void)
 }
 
 
-void display_char(char ch)
+static void display_char(char ch)
 // Takes a W or L, displays that character on the screen and sends 'L'
 // over IR if player has lost
 {

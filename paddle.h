@@ -26,12 +26,6 @@ typedef struct paddle_s {
 } Paddle;
 
 
-void move_paddle(Paddle * paddle, P_Dir dir);
-// Takes a pointer to a paddle struct and moves the entire paddle one
-// square up or one square down in the given direction. The paddle will
-// not move if you try to push it over the edge of the screen
-
-
 void move_paddle_task(Paddle * paddle);
 // Takes a pointer to a paddle and polls the navswitch to see if player
 // wants to move the paddle. If so, it moves the paddle according to
