@@ -4,12 +4,8 @@
     @brief  Functions for paddle movement
 */
 
-#define LEFT_WALL 6
-#define RIGHT_WALL 0
-#define PADDLE_START_LEFT 4
-#define PADDLE_START_MID 3
-#define PADDLE_START_RIGHT 2
-
+#include "paddle.h"
+#include "navswitch.h"
 
 void move_paddle(Paddle * paddle, P_Dir dir)
 // Takes a pointer to a paddle struct and moves the entire paddle one

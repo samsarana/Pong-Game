@@ -4,21 +4,9 @@
     @brief  Functions for ball movement and interactions
 */
 
-#define OUT_OF_PLAY 10
-#define LEFT_WALL 6
-#define RIGHT_WALL 0
-#define	TRANSMISSION_COL 0
-#define BOUNCE_COL 3
-#define BALL_START 3
-#define LOSE_COL 4
-
-typedef enum { F, B, FL, FR, BL, BR, S } Dir;
-
-typedef struct ball_s {
-    uint8_t x;
-    uint8_t y;
-    Dir dir;
-} Ball;
+#include "ball.h"
+#include "navswitch.h"
+#include "display.h"
 
 
 void move_ball_off_screen(Ball * ball)
