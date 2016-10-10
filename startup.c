@@ -4,6 +4,7 @@
     @brief  Functions required for game setup
 */
 
+
 #define BallPlaced 'P'
 #define LED_ON 1
 #define LED_OFF 0
