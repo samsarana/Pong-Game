@@ -200,15 +200,23 @@ bool decode_info(char ch, Ball * ball)
 }
 
 
+void move_ball_off_screen(Ball * ball)
+// Takes a pointer to a ball, moves it off the screen and makes it
+// stationary
+{
+    ball->x = 10;
+    ball->y = 10;
+    ball->dir = S;
+}
+
+
 void transmit_ball_info(Ball * ball)
 // Sends encoded ball struct over IR, moves the ball off the screen so
 // that it is not displayed, and makes it stationary
 {
     char ch_transmit = encode_ball_info(ball);
     ir_uart_putc(ch_transmit);
-    ball->x = 10;
-    ball->y = 10;
-    ball->dir = S;
+    move_ball_off_screen(ball);
 }
 
 
@@ -272,9 +280,11 @@ void move_ball_top(Ball * ball)
     }
 }
 
-void move_ball_bottom(Ball * ball)
+void move_ball_bottom(Ball * ball, Paddle paddle)
 // Takes a pointer to a ball struct which represents a ball at the bottom
 // of the screen, and a paddle. If the ball should bounce off the paddle,
+// its position and direction will be updated accordingly. Otherwise,
+// ball will continue straight (and you will lose the game!)
 {
     if (ball->y == paddle.left
         || (ball->y == paddle.right && ball->y == 0)) {
@@ -289,9 +299,11 @@ void move_ball_bottom(Ball * ball)
         ball->x--;
         ball->y--;
         ball->dir = FR;
+    } else if (ball->y == 0 || ball->y == 6) {
+        bounce_off_wall(ball);
     } else {
-        continue_straight(ball);
-    }
+		continue_straight(ball);
+	}
 }
 
 
@@ -306,7 +318,7 @@ void move_ball(Ball * ball, Paddle paddle)
     } else if (ball->x == 0) {
         move_ball_top(ball);
     } else if (ball->x == 3) {
-		move_ball_bottom(ball, paddle);
+        move_ball_bottom(ball, paddle);
     } else {
         bounce_off_wall(ball);
     }
@@ -314,18 +326,20 @@ void move_ball(Ball * ball, Paddle paddle)
 
 
 void display_task(Paddle paddle, Ball ball)
+// Takes a paddle and a ball, and displays them on the screen
 {
-    tinygl_point_t pos1 = { 4, paddle.left };
-    tinygl_point_t pos2 = { 4, paddle.right };
+    tinygl_point_t paddle_left = { 4, paddle.left };
+    tinygl_point_t paddle_right = { 4, paddle.right };
     tinygl_point_t ball_pos = { ball.x, ball.y };
 
     tinygl_clear();
-    tinygl_draw_line(pos1, pos2, 1);
+    tinygl_draw_line(paddle_left, paddle_right, 1);
     tinygl_draw_point(ball_pos, 1);
     tinygl_update();
 }
 
 void graphics_init(void)
+// Initialises tinygl functionality
 {
     tinygl_font_set(&font3x5_1);
     tinygl_text_speed_set(MESSAGE_RATE);
@@ -334,6 +348,8 @@ void graphics_init(void)
 }
 
 void ball_init(Ball * ball)
+// Takes a pointer to a ball struct, moves it back to its starting
+// position in the middle of the screen and makes it stationary
 {
     ball->x = 3;
     ball->y = 3;
@@ -341,6 +357,8 @@ void ball_init(Ball * ball)
 }
 
 void paddle_init(Paddle * paddle)
+// Takes a pointer to a paddle struct and moves it back to its starting
+// position in the middle of the screen
 {
     paddle->left = 4;
     paddle->mid = 3;
@@ -349,7 +367,7 @@ void paddle_init(Paddle * paddle)
 
 uint16_t update_speed(uint16_t speed)
 // Takes the current speed selection and toggles it to the next speed
-// selection. Returns new speed
+// selection. Returns the new speed
 {
     if (speed == 100) {
         speed = 50;
@@ -364,14 +382,31 @@ uint16_t update_speed(uint16_t speed)
     return speed;
 }
 
+
+void dim_led(uint16_t speed)
+// If speed is medium, toggles the led on successive iterations through
+// the while loop such that led appears dimmed
+{
+	static uint8_t toggle = 0;
+    if (speed == 50) {
+        if (toggle == 0) {
+            led_set(0, toggle);
+            toggle = 1;
+        } else {
+            led_set(0, toggle);
+            toggle = 0;
+        }
+    }
+}
+
+
 uint16_t wait_for_start(bool * ball_placed, uint16_t speed)
 // Display welcome message and poll pushbutton to see if player is ready
-// to start. Also poll usart to see if opponent has placed ball
+// to start. Also polls usart to see if opponent has placed ball
 {
     tinygl_clear();
     tinygl_text("PONG");
-    char ch;
-    int i = 0;
+    char ch = '\0';
 
     while (!navswitch_push_event_p(NAVSWITCH_PUSH)) {
         pacer_wait();
@@ -387,17 +422,42 @@ uint16_t wait_for_start(bool * ball_placed, uint16_t speed)
         if (button_push_event_p(0)) {
             speed = update_speed(speed);
         }
-        if (speed == 50) {
-            if (i == 0) {
-                led_set(0, i);
-                i = 1;
-            } else {
-                led_set(0, i);
-                i = 0;
-            }
-        }
+        dim_led(speed);
     }
     return speed;
+}
+
+
+void receive_char(Ball * ball, bool * game_over)
+// Polls the uart if the ball is not in play, and decodes character if
+// it is received 
+{
+	char ch_received = '\0';
+    if (ball->x == 10 && ball->y == 10 && ir_uart_read_ready_p()) {
+        ch_received = ir_uart_getc();
+        *game_over = decode_info(ch_received, ball);
+    }
+}
+
+void serve_ball(Ball * ball)
+// If the ball is stationary at the start of the game and the navswitch
+// is pushed, the ball is served
+{
+    if (ball->dir == S && navswitch_push_event_p(NAVSWITCH_PUSH)) {
+        ball->dir = F;
+    }
+}
+
+
+void check_for_loss(Ball* ball, bool* game_over, bool* ball_placed)
+// Takes a pointer to a ball and checks if it is in line with the paddle.
+// If so, player has lost the game and 'L' is displayed
+{
+    if (ball->x == 4) {
+        *game_over = true;
+        *ball_placed = false;
+        display_winner('L');
+    }
 }
 
 
@@ -417,7 +477,6 @@ int main(void)
     Ball ball;
     bool game_over = true;
     bool ball_placed = false;
-    char ch_received;
     uint16_t speed = 100;
 
     while (1) {
@@ -428,35 +487,22 @@ int main(void)
                 ball_init(&ball);
                 ir_uart_putc(BallPlaced);
             } else {
-                ball.x = 10;
-                ball.y = 10;
-                ball.dir = S;
+				move_ball_off_screen(&ball);
             }
             game_over = false;
             paddle_init(&paddle);
         } else {
             tinygl_clear();
             move_paddle_task(&paddle);
-            if (ball.x == 10 && ball.y == 10 && ir_uart_read_ready_p()) {
-                ch_received = ir_uart_getc();
-                game_over = decode_info(ch_received, &ball);
-            }
+            receive_char(&ball, &game_over);
             display_task(paddle, ball);
-            if (ball.dir == S && navswitch_push_event_p(NAVSWITCH_PUSH)) {
-                ball.dir = F;
-            }
+            serve_ball(&ball);
             if (count % speed == 0) {
                 move_ball(&ball, paddle);
                 count = 0;
             }
             count++;
-            //check_for_loss(ball, &game_over);
-
-            if (ball.x == 4) {
-                game_over = true;
-                ball_placed = false;
-                display_winner('L');
-            }
+            check_for_loss(&ball, &game_over, &ball_placed);
         }
     }
 }
