@@ -5,6 +5,8 @@
 #include "../fonts/font3x5_1.h"
 #include "delay.h"
 #include "ir_uart.h"
+#include "button.h"
+#include "led.h"
 
 
 /* Define polling rates in Hz.  */
@@ -79,6 +81,26 @@ void continue_straight(Ball* ball)
 	}
 }
 
+void finish(char ch)
+{
+	tinygl_text_mode_set (TINYGL_TEXT_MODE_STEP);
+	tinygl_clear();
+	tinygl_point_t display_square = {0,4};
+	if (ch == 'W') {
+		tinygl_draw_char (ch, display_square);
+	} else {
+		ir_uart_putc(ch);
+		tinygl_draw_char (ch, display_square);
+	}
+	int i = 0;
+	while (i <= 1000){
+		pacer_wait();
+		tinygl_update();
+		i++;
+	}
+	tinygl_text_mode_set (TINYGL_TEXT_MODE_SCROLL);
+}
+
 char encode_ball_info(Ball* ball)
 {
 	char ch = '0';
@@ -91,22 +113,28 @@ char encode_ball_info(Ball* ball)
 	return ch;
 }
 
-void decode_ball_info(char ch, Ball* ball)
+bool decode_ball_info(char ch, Ball* ball)
 // Decodes character transmitted over IR and updates fields of ball
 // struct accordingly
 {
-	ball->x = 0;
-	if (ch >= '0' && ch <= '6') {
-		ball->dir = B;
-		ch -= 48;
-	} else if (ch >= 'A' && ch <= 'G') {
-		ball->dir = BL;
-		ch -= 65;
-	} else if (ch >= 'a' && ch <= 'g') {
-		ball->dir = BR;
-		ch -= 97;
+	if (ch == 'L') {
+		finish('W');
+		return true;
+	} else {
+		ball->x = 0;
+		if (ch >= '0' && ch <= '6') {
+			ball->dir = B;
+			ch -= 48;
+		} else if (ch >= 'A' && ch <= 'G') {
+			ball->dir = BL;
+			ch -= 65;
+		} else if (ch >= 'a' && ch <= 'g') {
+			ball->dir = BR;
+			ch -= 97;
+		}
+		ball->y = 6 - ch;
 	}
-	ball->y = 6 - ch;
+	return false;
 }
 
 void transmit_ball_info(Ball * ball)
@@ -117,6 +145,31 @@ void transmit_ball_info(Ball * ball)
     ball->x = 10;
     ball->y = 10;
     ball->dir = S;
+}
+
+void edge_case_y(Ball* ball)
+{
+	if (ball->y == 0){
+		if (ball->dir == BR) {
+			ball->x++;
+			ball->y++;
+			ball->dir = BL;
+		} else if (ball->dir == FR) {
+			ball->x--;
+			ball->y++;
+			ball->dir = FL;
+		}
+	} else if (ball->y == 6){
+		if (ball->dir == BL) {
+			ball->x++;
+			ball->y--;
+			ball->dir = BR;
+		} else if (ball->dir == FL) {
+			ball->x--;
+			ball->y--;
+			ball->dir = FR;
+		}
+	}
 }
 
 void move_ball(Ball* ball, Paddle paddle)
@@ -144,6 +197,8 @@ void move_ball(Ball* ball, Paddle paddle)
 			transmit_ball_info(ball);
 		} else if (ball->dir == F) {
 			transmit_ball_info(ball);
+		} else if (ball->y == 0 || ball->y == 6){
+			edge_case_y(ball);
 		} else {
 			continue_straight(ball);
 		}
@@ -162,26 +217,8 @@ void move_ball(Ball* ball, Paddle paddle)
 		} else {
 			continue_straight(ball);
 		}
-	} else if (ball->y == 0){
-		if (ball->dir == BR) {
-			ball->x++;
-			ball->y++;
-			ball->dir = BL;
-		} else if (ball->dir == FR) {
-			ball->x--;
-			ball->y++;
-			ball->dir = FL;
-		}
-	} else if (ball->y == 6){
-		if (ball->dir == BL) {
-			ball->x++;
-			ball->y--;
-			ball->dir = BR;
-		} else if (ball->dir == FL) {
-			ball->x--;
-			ball->y--;
-			ball->dir = FR;
-		}
+	} else {
+		edge_case_y(ball);
 	}
 }
 /*
@@ -233,24 +270,57 @@ void paddle_init(Paddle* paddle)
 	paddle->right = 2;
 }
 
-void wait_for_start(bool* ball_placed)
+uint16_t update_speed(uint16_t speed)
+// Takes the current speed selection and toggles it to the next speed
+// selection. Returns new speed
+{
+	if (speed == 100) {
+		speed = 50;
+		led_set(0, 1);
+	} else if (speed == 50) {
+		speed = 30;
+		led_set(0, 1);
+	} else if (speed == 30) {
+		speed = 100;
+		led_set(0, 0);
+	}
+	return speed;
+}
+
+uint16_t wait_for_start(bool* ball_placed, uint16_t speed)
 // Display welcome message and poll pushbutton to see if player is ready
 // to start. Also poll usart to see if opponent has placed ball
 {
     tinygl_clear();
     tinygl_text("PONG");
     char ch;
+    int i = 0;
+    
     while (!navswitch_push_event_p(NAVSWITCH_PUSH)) {
         pacer_wait();
         tinygl_update();
         navswitch_update();
+        button_update();
         if (ir_uart_read_ready_p()) {
             ch = ir_uart_getc();
             if (ch == BallPlaced) {
 				*ball_placed = true;
 			}
         }
+        if (button_push_event_p (0)) {
+			speed = update_speed(speed);
+		}
+		if (speed == 50) {
+			if (i == 0){
+				led_set(0, i);
+				i = 1;
+			} else {
+				led_set(0, i);
+				i = 0;
+			}
+		}
     }
+    return speed;
 }
 
 
@@ -258,6 +328,9 @@ int main (void)
 {
     system_init ();
     navswitch_init();
+    led_init();
+    led_set(0, 0);
+    button_init();
     pacer_init(300);
     tinygl_init(300);
     ir_uart_init ();
@@ -268,12 +341,13 @@ int main (void)
 	bool game_over = true;
 	bool ball_placed = false;
 	char ch_received;
+	uint16_t speed = 100;
 
     while (1)
     {
 		pacer_wait ();
 		if (game_over) {
-			wait_for_start(&ball_placed);
+			speed = wait_for_start(&ball_placed, speed);
 			if (!ball_placed) {
 				ball_init(&ball);
 				ir_uart_putc (BallPlaced);
@@ -289,13 +363,13 @@ int main (void)
 			move_paddle_task (&paddle);
 			if (ball.x == 10 && ball.y == 10 && ir_uart_read_ready_p ()) {
 				ch_received = ir_uart_getc ();
-				decode_ball_info(ch_received, &ball);
+				game_over = decode_ball_info(ch_received, &ball);
 			}
 			display_task(paddle, ball);
 			if (ball.dir == S && navswitch_push_event_p(NAVSWITCH_PUSH)) {
 				ball.dir = F;
 			}
-			if (count % 100 == 0) {
+			if (count % speed == 0) {
 				move_ball(&ball, paddle);
 				count = 0;
 			}
@@ -305,6 +379,7 @@ int main (void)
 			if (ball.x == 4) {
 				game_over = true;
 				ball_placed = false;
+				finish('L');
 			}
 		}
 	}
@@ -316,8 +391,4 @@ int main (void)
  * 
  * Also, the ball occassionally doubles up still. Don't have the brainpower
  * to work out when.
- * 
- * But I think the most important thing to do next is to get code commented
- * and modularised, this is what we will lose marks for atm. We have an
- * almost perfectly working game!!!
  */
