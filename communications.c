@@ -4,23 +4,11 @@
     @brief  Functions required for communicating between boards via ir
 */
 
-#define START_CHAR '0'
-#define ALPHA_UPPER 17
-#define ALPHA_LOWER 49
-#define TRANSMISSION_COL 0
-#define BACK_BOTTOM '0'
-#define BACK_TOP '6'
-#define BACK_LEFT_BOTTOM 'A'
-#define BACK_LEFT_TOP 'G'
-#define BACK_RIGHT_TOP 'a'
-#define BACK_RIGHT_TOP 'g'
-#define Y_DIFF_BACK 48
-#define Y_DIFF_BACK_LEFT 65
-#define Y_DIFF_BACK_RIGHT 97
-#define OUT_OF_PLAY 10
-#define NUM_ROWS 6
-#define WIN 'W'
-#define LOSE 'L'
+#include "communications.h"
+#include "ball.h"
+#include "display.h"
+#include "ir_uart.h"
+
 
 char encode_ball_info(Ball * ball)
 // Takes a ball struct and encodes it as an ASCII char to represent

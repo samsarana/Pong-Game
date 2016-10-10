@@ -4,13 +4,13 @@
     @brief  Functions for LED matrix manipulation
 */
 
-#define MESSAGE_RATE 10
-#define WAIT_TIME 1000
-#define MIDDLE_SQUARE 0, 4
-#define WIN 'W'
-#define LOSE 'L'
-#define PADDLE_COL 4
-#define LED_ON 1
+#include "display.h"
+#include "tinygl.h"
+#include "pacer.h"
+#include "ir_uart.h"
+#include "paddle.h"
+#include "ball.h"
+#include "../fonts/font3x5_1.h"
 
 
 void wait(void)

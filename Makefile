@@ -61,6 +61,15 @@ button.o: ../../drivers/button.c ../../drivers/avr/pio.h ../../drivers/avr/syste
 led.o: ../../drivers/led.c ../../drivers/avr/pio.h ../../drivers/avr/system.h ../../drivers/led.h
 	$(CC) -c $(CFLAGS) $< -o $@
 
+ball.o: ball.h ../../drivers/navswitch.h ../../drivers/display.h
+	$(CC) -c $(CFLAGS) $< -o $@
+
+communications.o: communications.h ball.h display.h ../../drivers/avr/ir_uart.h
+	$(CC) -c $(CFLAGS) $< -o $@
+
+display.o: display.h ../../drivers/avr/ir_uart.h ../../utils/font.h ../../utils/pacer.h ../../utils/tinygl.h
+	$(CC) -c $(CFLAGS) $< -o $@
+
 # Link: create ELF output file from object files.
 game.out: game.o system.o pacer.o tinygl.o navswitch.o timer.o timer0.o display.o font.o ledmat.o ir_uart.o usart1.o prescale.o button.o led.o
 	$(CC) $(CFLAGS) $^ -o $@ -lm
