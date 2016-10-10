@@ -6,7 +6,7 @@
 
 #include "communications.h"
 #include "ball.h"
-#include "display.h"
+#include "graphics.h"
 #include "ir_uart.h"
 
 
@@ -53,7 +53,7 @@ bool decode_info(char ch, Ball * ball)
         } else if (ch >= BACK_LEFT_BOTTOM && ch <= BACK_LEFT_TOP) {
             ball->dir = BL;
             ch -= Y_DIFF_BACK_LEFT;
-        } else if (ch >= BACK_RIGHT_TOP && ch <= BACK_RIGHT_TOP) {
+        } else if (ch >= BACK_RIGHT_BOTTOM && ch <= BACK_RIGHT_TOP) {
             ball->dir = BR;
             ch -= Y_DIFF_BACK_RIGHT;
         }

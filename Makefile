@@ -16,7 +16,7 @@ all: game.out
 
 
 # Compile: create object files from C source files.
-game.o: game.c ../../drivers/avr/system.h ../../drivers/avr/timer.h ../../utils/pacer.h ../../utils/tinygl.h ../../drivers/navswitch.h
+game.o: game.c ../../drivers/avr/system.h ../../utils/pacer.h ../../utils/tinygl.h ../../drivers/navswitch.h ../../drivers/avr/ir_uart.h ../../drivers/button.h ../../drivers/led.h game.h paddle.h ball.h graphics.h startup.h communications.h
 	$(CC) -c $(CFLAGS) $< -o $@
 
 system.o: ../../drivers/avr/system.c ../../drivers/avr/system.h
@@ -61,17 +61,23 @@ button.o: ../../drivers/button.c ../../drivers/avr/pio.h ../../drivers/avr/syste
 led.o: ../../drivers/led.c ../../drivers/avr/pio.h ../../drivers/avr/system.h ../../drivers/led.h
 	$(CC) -c $(CFLAGS) $< -o $@
 
-ball.o: ball.h ../../drivers/navswitch.h ../../drivers/display.h
+ball.o: ball.c ball.h ../../drivers/navswitch.h graphics.h paddle.h communications.h
 	$(CC) -c $(CFLAGS) $< -o $@
 
-communications.o: communications.h ball.h display.h ../../drivers/avr/ir_uart.h
+paddle.o: paddle.c paddle.h ../../drivers/navswitch.h
 	$(CC) -c $(CFLAGS) $< -o $@
 
-display.o: display.h ../../drivers/avr/ir_uart.h ../../utils/font.h ../../utils/pacer.h ../../utils/tinygl.h
+communications.o: communications.c communications.h ball.h graphics.h ../../drivers/avr/ir_uart.h
+	$(CC) -c $(CFLAGS) $< -o $@
+
+graphics.o: graphics.c graphics.h ../../drivers/avr/ir_uart.h ../../utils/font.h ../../utils/pacer.h ../../utils/tinygl.h
+	$(CC) -c $(CFLAGS) $< -o $@
+
+startup.o: startup.c startup.h ../../drivers/avr/ir_uart.h ../../utils/tinygl.h ../../drivers/led.h ../../drivers/button.h ../../drivers/navswitch.h
 	$(CC) -c $(CFLAGS) $< -o $@
 
 # Link: create ELF output file from object files.
-game.out: game.o system.o pacer.o tinygl.o navswitch.o timer.o timer0.o display.o font.o ledmat.o ir_uart.o usart1.o prescale.o button.o led.o
+game.out: game.o system.o pacer.o tinygl.o navswitch.o timer.o timer0.o display.o font.o ledmat.o ir_uart.o usart1.o prescale.o button.o led.o paddle.o ball.o graphics.o startup.o communications.o
 	$(CC) $(CFLAGS) $^ -o $@ -lm
 	$(SIZE) $@
 

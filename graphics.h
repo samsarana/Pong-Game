@@ -1,13 +1,15 @@
-/** @file   display.h
+/** @file   graphics.h
     @author Angus Schuler and Sam Clarke
     @date   10 October 2016
     @brief  Functions for LED matrix manipulation
 */
 
 
-#ifndef DISPLAY_H
-#define DISPLAY_H
+#ifndef GRAPHICS_H
+#define GRAPHICS_H
 
+#include "paddle.h"
+#include "ball.h"
 
 #define MESSAGE_RATE 10
 #define WAIT_TIME 1000
@@ -39,4 +41,4 @@ void graphics_init(void);
 // Initialises tinygl functionality
 
 
-#endif /* DISPLAY_H  */
+#endif /* GRAPHICS_H  */

@@ -5,8 +5,10 @@
 */
 
 #include "ball.h"
+#include "paddle.h"
 #include "navswitch.h"
-#include "display.h"
+#include "graphics.h"
+#include "communications.h"
 
 
 void move_ball_off_screen(Ball * ball)

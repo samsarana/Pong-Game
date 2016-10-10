@@ -8,6 +8,8 @@
 #ifndef COMMUNICATIONS_H
 #define COMMUNICATIONS_H
 
+#include "ball.h"
+#include "system.h"
 
 #define START_CHAR '0'
 #define ALPHA_UPPER 17
@@ -17,7 +19,7 @@
 #define BACK_TOP '6'
 #define BACK_LEFT_BOTTOM 'A'
 #define BACK_LEFT_TOP 'G'
-#define BACK_RIGHT_TOP 'a'
+#define BACK_RIGHT_BOTTOM 'a'
 #define BACK_RIGHT_TOP 'g'
 #define Y_DIFF_BACK 48
 #define Y_DIFF_BACK_LEFT 65

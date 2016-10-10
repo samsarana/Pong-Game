@@ -4,15 +4,13 @@
     @brief  Functions required for game setup
 */
 
-
-#define BallPlaced 'P'
-#define LED_ON 1
-#define LED_OFF 0
-#define LED_BLUE 0
-#define SLOW 100
-#define NORMAL 50
-#define INSANE 30
-#define BUTTON 0
+#include "startup.h"
+#include "led.h"
+#include "tinygl.h"
+#include "button.h"
+#include "navswitch.h"
+#include "pacer.h"
+#include "ir_uart.h"
 
 
 void dim_led(uint16_t speed)
@@ -20,7 +18,7 @@ void dim_led(uint16_t speed)
 // the while loop such that led appears dimmed
 {
 	static uint8_t toggle = LED_OFF;
-    if (speed == MEDIUM) {
+    if (speed == NORMAL) {
         if (toggle == LED_OFF) {
             led_set(LED_BLUE, toggle);
             toggle = LED_ON;

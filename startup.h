@@ -8,6 +8,7 @@
 #ifndef STARTUP_H
 #define STARTUP_H
 
+#include "system.h"
 
 #define BallPlaced 'P'
 #define LED_ON 1

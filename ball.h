@@ -8,6 +8,9 @@
 #ifndef BALL_H
 #define BALL_H
 
+#include "system.h"
+#include "paddle.h"
+
 #define OUT_OF_PLAY 10
 #define LEFT_WALL 6
 #define RIGHT_WALL 0

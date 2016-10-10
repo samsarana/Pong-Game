@@ -7,6 +7,7 @@
 #include "paddle.h"
 #include "navswitch.h"
 
+
 void move_paddle(Paddle * paddle, P_Dir dir)
 // Takes a pointer to a paddle struct and moves the entire paddle one
 // square up or one square down in the given direction. The paddle will

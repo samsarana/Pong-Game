@@ -7,6 +7,7 @@
 #ifndef PADDLE_H
 #define PADDLE_H
 
+#include "system.h"
 
 #define LEFT_WALL 6
 #define RIGHT_WALL 0
@@ -40,8 +41,6 @@ void move_paddle_task(Paddle * paddle);
 void paddle_init(Paddle * paddle);
 // Takes a pointer to a paddle struct and moves it back to its starting
 // position in the middle of the screen
-
-
 
 
 #endif /* PADDLE_H  */

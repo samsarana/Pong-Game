@@ -1,10 +1,10 @@
-/** @file   display.c
+/** @file   graphics.c
     @author Angus Schuler and Sam Clarke
     @date   10 October 2016
     @brief  Functions for LED matrix manipulation
 */
 
-#include "display.h"
+#include "graphics.h"
 #include "tinygl.h"
 #include "pacer.h"
 #include "ir_uart.h"
