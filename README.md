@@ -7,7 +7,7 @@ Sam Clarke and Angus Schuler
 ----------------------------
 *How to run the Game:*
 ------------------------
-1. Open you choice of terminal.
+1. Open your choice of terminal.
 2. Navigate to the directory where the game is downloaded in the terminal.
 3. Plug in your UCFunkit.
 4. Run the 'make program' command in the terminal.
